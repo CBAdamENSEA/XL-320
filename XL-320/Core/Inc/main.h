@@ -225,8 +225,8 @@ void Error_Handler(void);
 #define LCD_G3_GPIO_Port GPIOJ
 #define FMC_SDCLK_Pin GPIO_PIN_8
 #define FMC_SDCLK_GPIO_Port GPIOG
-#define ARDUINO_TX_D1_Pin GPIO_PIN_6
-#define ARDUINO_TX_D1_GPIO_Port GPIOC
+#define DATA_Pin GPIO_PIN_6
+#define DATA_GPIO_Port GPIOC
 #define FMC_A4_Pin GPIO_PIN_4
 #define FMC_A4_GPIO_Port GPIOF
 #define FMC_SDNME_Pin GPIO_PIN_5
