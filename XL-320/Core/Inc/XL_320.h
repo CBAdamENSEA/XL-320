@@ -9,23 +9,8 @@
 #define INC_XL_320_H_
 
 
-//// Instructions
-#define XL320_PING 0x01
-#define XL320_READ 0x02
-#define XL320_WRITE 0x03
-#define XL320_REG_WRITE 0x04
-#define XL320_ACTION 0x05
-#define XL320_RESET 0x06
-#define XL320_REBOOT 0x08
-#define XL320_CLEAR 0X10
-#define XL320_CONTROL_TABLE_BACKUP 0X20
-#define XL320_STATUS 0x55
-#define XL320_SYNC_READ 0x82
-#define XL320_SYNC_WRITE 0x83
-#define XL320_FAST_SYNC_READ 0X8A
-#define XL320_BULK_READ 0x92
-#define XL320_BULK_WRITE 0x93
-#define XL320_FAST_BULK_READ 0x9A
+#include "stdio.h"
+
 
 //// EEPROM
 #define XL320_MODEL_NUMBER 0
@@ -83,8 +68,55 @@
 #define XL320_1000000 3
 
 
+#define BUFFER (buffer)
+#define BUFFER_INDEX (buffer_index)
+#define BUFFER_LENGTH (128)
 
 
+//// Instructions
+typedef enum
+{
+  ping = 0x01,
+  read = 0x02,
+  write = 0x03,
+
+  reg_write = 0x04,
+  action = 0x05,
+
+  factory_reset = 0x06,
+  reboot = 0x08,
+  clear = 0x10,
+  control_table_backup = 0x20,
+
+  sync_read = 0x82,
+  sync_write = 0x83,
+  fast_sync_read = 0x8A,
+
+  bulk_read = 0x92,
+  bulk_write = 0x93,
+  fast_bulk_read = 0x9A
+} XL320_instructions;
+
+
+//// Functions
+
+uint16_t XL_320_CRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
+void XL_320_Display_Packet(uint8_t * packet,uint8_t size);
+
+void XL_320_send_packet(uint8_t id, XL320_instructions inst, uint8_t *params, uint16_t params_length);
+
+uint8_t XL_320_ping(uint8_t id,uint16_t *model_number,uint8_t *firmware_version);
+void XL_320_write(uint8_t id, uint16_t address, uint8_t *data, uint16_t data_length);
+uint8_t XL_320_read(uint8_t id, uint16_t address, uint16_t data_length, uint8_t *return_data, uint16_t *return_data_length);
+
+uint16_t XL_320_read_present_position(uint8_t id);
+void XL_320_set_goal_position(uint8_t id, uint16_t position);
+void XL_320_set_torque_enable(uint8_t id, uint8_t enable);
+
+void XL_320_clear_receive_buffer(void);
+void XL_320_receive_callback(uint8_t received_data);
+uint8_t XL_320_get_status_packet(uint8_t *packet, uint16_t *packet_length);
+uint8_t XL_320_parse_status_packet(uint8_t *packet, uint32_t packet_length, uint8_t *id, uint8_t *params, uint16_t *params_length, uint8_t *error, uint8_t *crc_check);
 
 
 
