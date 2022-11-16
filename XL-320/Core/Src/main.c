@@ -124,7 +124,7 @@ int main(void)
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	while (1)
+	while (1)00
 	{
 
 		XL_320_set_goal_position(0x01, 0);
