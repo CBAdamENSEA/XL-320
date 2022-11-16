@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2022 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -44,10 +44,13 @@
 
 /* USER CODE BEGIN PV */
 uint8_t buffer[BUFFER_LENGTH] = {0};
-volatile uint16_t buffer_index = 0;
+uint16_t buffer_index = 0;
 uint8_t Rx_char;
 uint8_t Message[64];
 uint8_t MessageLen;
+extern uint8_t RxBuffer[BUFFER_LENGTH];
+int error_number=0;
+int callback_number=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,9 +96,12 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  uint16_t model_number=0;
-  uint16_t firmware_version=0;
-/*
+	uint16_t model_number=0;
+	uint8_t firmware_version=0;
+	//XL_320_set_torque_enable(0x01, 0);
+
+
+
   if(XL_320_ping(0x01,&model_number,&firmware_version)==1)
   {
 	  MessageLen = sprintf ((char *) Message, "model_number= 0x%04x \r\n", model_number);
@@ -103,26 +109,38 @@ int main(void)
 	  MessageLen = sprintf ((char *) Message, "firmware_version= 0x%04x \r\n", firmware_version);
 	  HAL_UART_Transmit (&huart1, Message, MessageLen, 100);
   }
-*/
-  XL_320_set_torque_enable(0x01, 1);
-  XL_320_set_goal_position(0x01, 0);
-  HAL_Delay(2000);
-  int i=0;
-  for(i=0;i<512;i++)
-  {
-  XL_320_set_goal_position(0x01, i);
-  }
+
+	//XL_320_set_torque_enable(0x01, 0);
+	//XL_320_set_baudrate(0x01, Br_115200);
+	XL_320_set_torque_enable(0x01, 1);
+	int position;
+
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1)
+	{
+
+		XL_320_set_goal_position(0x01, 0);
+		HAL_Delay(2000);
+		XL_320_set_goal_position(0x01, 512);
+//		int i=0;
+//		for(i=0;i<512;i++)
+//		{
+//			XL_320_set_goal_position(0x01, i);
+//			HAL_Delay(10);
+//		}
+		HAL_Delay(2000);
+		position=XL_320_read_present_position(0x01);
+		printf("Current position is %d \r\n",position);
+		HAL_Delay(2000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -171,10 +189,21 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+	callback_number++;
 	XL_320_receive_callback(Rx_char);
+
+
+
 }
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+	error_number++;
+	//HAL_UART_Receive_IT(&huart6, &Rx_char, 1);
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -184,11 +213,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1)
+	{
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -203,7 +232,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+	/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }

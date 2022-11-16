@@ -22,6 +22,7 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "XL_320.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +58,7 @@
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart6;
 /* USER CODE BEGIN EV */
-
+extern uint8_t Rx_char;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -204,10 +205,11 @@ void SysTick_Handler(void)
 void USART6_IRQHandler(void)
 {
   /* USER CODE BEGIN USART6_IRQn 0 */
-
+	//XL_320_receive_callback(Rx_char);
   /* USER CODE END USART6_IRQn 0 */
   HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
+  //HAL_UART_Receive_IT(&huart6, &Rx_char, 1);
 
   /* USER CODE END USART6_IRQn 1 */
 }

@@ -72,6 +72,15 @@
 #define BUFFER_INDEX (buffer_index)
 #define BUFFER_LENGTH (128)
 
+#define PARAMS_LENGTH 10
+
+typedef enum
+{
+	Br_9600 = 0,
+	Br_57600 = 1,
+	Br_115200=2,
+	Br_1000000=3
+} XL320_baudrates;
 
 //// Instructions
 typedef enum
@@ -112,6 +121,7 @@ uint8_t XL_320_read(uint8_t id, uint16_t address, uint16_t data_length, uint8_t 
 uint16_t XL_320_read_present_position(uint8_t id);
 void XL_320_set_goal_position(uint8_t id, uint16_t position);
 void XL_320_set_torque_enable(uint8_t id, uint8_t enable);
+void XL_320_set_baudrate(uint8_t id, uint8_t br);
 
 void XL_320_clear_receive_buffer(void);
 void XL_320_receive_callback(uint8_t received_data);

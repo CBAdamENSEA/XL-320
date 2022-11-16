@@ -14,12 +14,17 @@
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart6;
+extern DMA_HandleTypeDef hdma_usart6_rx;
 
 extern uint8_t buffer[BUFFER_LENGTH];
-extern volatile uint16_t buffer_index;
+extern uint16_t buffer_index;
 extern uint8_t Rx_char;
 
+extern int error_number;
+extern int callback_number;
+
 char packet_msg[20];
+uint8_t RxBuffer[BUFFER_LENGTH];
 
 unsigned short crc_table[256] = {
 		0x0000, 0x8005, 0x800F, 0x000A, 0x801B, 0x001E, 0x0014, 0x8011,
@@ -125,15 +130,17 @@ void XL_320_send_packet(uint8_t id, XL320_instructions inst, uint8_t *params, ui
 	HAL_HalfDuplex_EnableTransmitter(&huart6);
 	if (HAL_UART_Transmit(&huart6, packet, packet_length, 0xFFFF)==HAL_OK)
 	{
-		printf("\r\nData transmitted successfully\r\n");
+		HAL_HalfDuplex_EnableReceiver(&huart6);
+		HAL_UART_Receive_IT(&huart6, &Rx_char, 1);
+
+		//printf("\r\nData transmitted successfully\r\n");
 	}
 	else
 	{
-		printf("Data is not transmitted\r\n");
+		//printf("Data is not transmitted\r\n");
 	}
 	uint16_t Size=0;
-	HAL_HalfDuplex_EnableReceiver(&huart6);
-	HAL_UART_Receive_IT(&huart6, &Rx_char, 1);
+	//	HAL_HalfDuplex_EnableReceiver(&huart6);
 	//HAL_UART_Receive(&huart6, buffer, 14,1000);
 	//XL_320_Display_Packet(buffer, 14);
 	//XL_320_Display_Packet(packet, packet_length);
@@ -150,10 +157,13 @@ uint8_t XL_320_ping(uint8_t id,uint16_t *model_number,uint8_t *firmware_version)
 	uint32_t timeout = 0xAFFFFFFF;
 
 
+
 	while (XL_320_get_status_packet(status_packet, &status_packet_length)==0)
 	{
 		timeout--;
-		if (timeout == 0)
+		//printf("error_number=%d\r\n",error_number);
+		//printf("callback_number=%d\r\n",callback_number);
+		if (timeout==0)
 		{
 			return 0; /* Timeout. */
 		}
@@ -162,13 +172,13 @@ uint8_t XL_320_ping(uint8_t id,uint16_t *model_number,uint8_t *firmware_version)
 	uint8_t id_r;
 	uint8_t error;
 	uint8_t crc_check;
-	uint8_t *return_data= {0};
-	uint16_t *return_data_length=0;
+	uint16_t return_data_length=0;
+	uint8_t return_data[PARAMS_LENGTH];
 	XL_320_parse_status_packet(status_packet,
 			status_packet_length,
 			&id_r,
 			return_data,
-			return_data_length,
+			&return_data_length,
 			&error,
 			&crc_check);
 	if ((id_r == id) && (error == 0x00) && (crc_check==1))
@@ -218,10 +228,10 @@ uint8_t XL_320_read(uint8_t id, uint16_t address, uint16_t data_length, uint8_t 
 	while (XL_320_get_status_packet(status_packet, &status_packet_length)==0)
 	{
 		timeout--;
-		if (timeout == 0)
-		{
-			return 0; /* Timeout. */
-		}
+				if (timeout==0)
+				{
+					return 0; /* Timeout. */
+				}
 	}
 
 	uint8_t id_r;
@@ -261,9 +271,16 @@ void XL_320_set_goal_position(uint8_t id, uint16_t position)
 }
 void XL_320_set_torque_enable(uint8_t id, uint8_t enable)
 {
-  uint16_t address = XL320_TORQUE_ENABLE;
-  uint8_t data = enable ;
-  XL_320_write(id, address, &data, 1);
+	uint16_t address = XL320_TORQUE_ENABLE;
+	uint8_t data = enable ;
+	XL_320_write(id, address, &data, 1);
+}
+
+void XL_320_set_baudrate(uint8_t id, XL320_baudrates br)
+{
+	uint16_t address = XL320_BAUD_RATE;
+	uint8_t data = br ;
+	XL_320_write(id, address, &data, 1);
 }
 
 void XL_320_clear_receive_buffer(void)
@@ -286,15 +303,18 @@ void XL_320_receive_callback(uint8_t received_data)
 	{
 		buffer_index = 0;
 	}
+	HAL_UART_Receive_IT(&huart6, &Rx_char, 1);
+
+
 }
 uint8_t XL_320_get_status_packet(uint8_t *packet, uint16_t *packet_length)
 {
 	if (buffer_index < 10) // minimum 10
-	{
+			{
 		/* Receive didn't complete. */
 		//printf("Receive didn't complete: buffer_index=%d\r\n",buffer_index);
 		return 0;
-	}
+			}
 
 	uint16_t packet_starting_index = 0;
 	uint8_t header_ok = 0;
@@ -324,11 +344,12 @@ uint8_t XL_320_get_status_packet(uint8_t *packet, uint16_t *packet_length)
 		}
 	}
 	uint16_t length = buffer[packet_starting_index + 5] + (buffer[packet_starting_index + 6] << 8);
-	uint16_t packet_ending_index = packet_starting_index + (length - 3) + 9;
+	uint16_t packet_ending_index = packet_starting_index + (length ) + 9-3;
 
-	if (packet_ending_index > buffer_index)
+	if (packet_ending_index >= buffer_index) // J'ai changé cette ligne
 	{
 		/* Receive didn't complete. */
+		//printf("Received %d bytes\r\n",buffer_index);
 		return 0;
 	}
 
